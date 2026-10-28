@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brightmont Academy St. Charles - Inventory App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Visual Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brightmont: {
+                            blue: '#1e3a8a',
+                            navy: '#0f172a',
+                            accent: '#2563eb',
+                            gold: '#f59e0b',
+                            goldHover: '#d97706',
+                            emerald: '#059669',
+                            rose: '#e11d48'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom UI Tweaks & Animations */
+        .glass-header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans selection:bg-blue-200">
+
+    <!-- TOP ANNOUNCEMENT & DIRECT GOOGLE SHEET QUICK ACCESS BAR -->
+    <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white text-xs py-2 px-4 flex flex-wrap items-center justify-between border-b border-blue-800/50 shadow-inner no-print">
+        <div class="flex items-center space-x-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">
+                <i class="fa-solid fa-circle text-[8px] mr-1.5 text-emerald-400"></i> Connected to Live Google Sheet
+            </span>
+            <span class="hidden md:inline text-slate-300">
+                St. Charles Campus Inventory Management System
+            </span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-slate-400 text-[11px] hidden sm:inline">
+                <i class="fa-regular fa-clock mr-1"></i> Sync Target: GID #1289365460
+            </span>
+            <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="inline-flex items-center font-semibold text-emerald-300 hover:text-white hover:underline transition-colors bg-white/10 px-2.5 py-0.5 rounded border border-emerald-400/40">
+                <i class="fa-solid fa-file-excel mr-1.5 text-emerald-400"></i> Open Live Google Sheet <i class="fa-solid fa-arrow-up-right-from-square ml-1.5 text-[10px]"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header class="glass-header text-white sticky top-0 z-30 shadow-md border-b border-slate-700/60 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo / Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-amber-500 flex items-center justify-center shadow-lg font-black text-xl text-white tracking-wider border border-white/20">
+                        B
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="font-bold text-lg sm:text-xl tracking-tight text-white">Brightmont Academy</h1>
+                            <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-medium">St. Charles</span>
+                        </div>
+                        <p class="text-xs text-slate-400 hidden sm:block">Campus Inventory & Meredith Restock Portal</p>
+                    </div>
+                </div>
+
+                <!-- Main Nav Tabs -->
+                <nav class="hidden lg:flex space-x-1" id="desktopNav">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-white bg-blue-600 shadow">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
+                    </button>
+                    <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Master Inventory
+                    </button>
+                    <button onclick="switchTab('rooms')" id="nav-rooms" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-door-open mr-1.5"></i> Room Explorer
+                    </button>
+                    <button onclick="switchTab('reorder')" id="nav-reorder" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all relative">
+                        <i class="fa-solid fa-cart-shopping mr-1.5"></i> Meredith Restock Desk
+                        <span id="reorderBadge" class="hidden absolute -top-1 -right-1 bg-amber-500 text-slate-900 font-extrabold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                    <button onclick="switchTab('sync')" id="nav-sync" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Sheet Sync & Apps Script
+                    </button>
+                </nav>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="openModal('addItemModal')" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg shadow-md transition-all flex items-center border border-blue-400/30">
+                        <i class="fa-solid fa-plus mr-1.5"></i> Add New Item
+                    </button>
+                    <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       title="View Live Google Sheet"
+                       class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow flex items-center transition-all">
+                        <i class="fa-solid fa-table mr-1.5"></i> <span class="hidden sm:inline">View Sheet</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Sub-Bar -->
+        <div class="lg:hidden bg-slate-900 border-t border-slate-800 px-2 py-2 flex overflow-x-auto space-x-1 no-scrollbar">
+            <button onclick="switchTab('dashboard')" id="mnav-dashboard" class="mobile-nav-btn whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600">
+                <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard
+            </button>
+            <button onclick="switchTab('inventory')" id="mnav-inventory" class="mobile-nav-btn whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium text-slate-300">
+                <i class="fa-solid fa-boxes-stacked mr-1"></i> Master Inventory
+            </button>
+            <button onclick="switchTab('rooms')" id="mnav-rooms" class="mobile-nav-btn whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium text-slate-300">
+                <i class="fa-solid fa-door-open mr-1"></i> Rooms
+            </button>
+            <button onclick="switchTab('reorder')" id="mnav-reorder" class="mobile-nav-btn whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium text-slate-300">
+                <i class="fa-solid fa-cart-shopping mr-1"></i> Restock Desk
+            </button>
+            <button onclick="switchTab('sync')" id="mnav-sync" class="mobile-nav-btn whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium text-slate-300">
+                <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Google Sync
+            </button>
+        </div>
+    </header>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- MAIN APP CONTENT AREA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- TAB 1: DASHBOARD & VISUAL ANALYTICS -->
+        <section id="tab-dashboard" class="tab-content animate-fade-in space-y-6">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-slate-800 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl font-black select-none pointer-events-none text-white">
+                    B
+                </div>
+                <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-semibold mb-2 border border-amber-500/30">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Brightmont Academy St. Charles Campus</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Inventory Overview & Restock Control</h2>
+                        <p class="text-slate-300 text-sm mt-1 max-w-2xl">
+                            Real-time campus asset tracking synchronized with standard 8-column schema. Monitor consumable items for Meredith, track quantities across room locations, and manage reorders seamlessly.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow border border-emerald-400/30 flex items-center transition-all">
+                            <i class="fa-solid fa-external-link mr-2"></i> Launch Live Sheet
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Unique Items</p>
+                        <h3 id="kpiTotalItems" class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Cataloged rows</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Unit Stock</p>
+                        <h3 id="kpiTotalUnits" class="text-2xl sm:text-3xl font-black text-blue-600 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Combined item count</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-cubes"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Consumables (Meredith)</p>
+                        <h3 id="kpiConsumables" class="text-2xl sm:text-3xl font-black text-amber-600 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Flagged for replacement</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Low Stock Alerts</p>
+                        <h3 id="kpiLowStock" class="text-2xl sm:text-3xl font-black text-rose-600 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Quantity &le; 2 units</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Analytics Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Chart 1: Subject Breakdown -->
+                <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center">
+                            <i class="fa-solid fa-chart-bar text-blue-600 mr-2"></i> Inventory Distribution by Primary Subject Area
+                        </h3>
+                        <span class="text-xs text-slate-400">8 Standard Categories</span>
+                    </div>
+                    <div class="relative flex-1 min-h-[260px]">
+                        <canvas id="subjectChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Consumables vs Permanent -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center">
+                            <i class="fa-solid fa-pie-chart text-amber-500 mr-2"></i> Consumable Breakdown
+                        </h3>
+                        <span class="text-xs text-amber-600 font-medium">Meredith Alert Status</span>
+                    </div>
+                    <div class="relative flex-1 min-h-[260px] flex items-center justify-center">
+                        <canvas id="consumablesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MASTER INVENTORY (TABLE & CARD VIEWS) -->
+        <section id="tab-inventory" class="tab-content hidden animate-fade-in space-y-4">
+            <!-- Filter & Toolbar Bar -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <!-- Search input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="renderInventory()" 
+                               placeholder="Search item name, description, room, contact, notes..." 
+                               class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+
+                    <!-- Dropdown Filters -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Subject Filter -->
+                        <select id="filterSubject" onchange="renderInventory()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">All Subjects</option>
+                        </select>
+
+                        <!-- Room Filter -->
+                        <select id="filterRoom" onchange="renderInventory()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">All Rooms / Spaces</option>
+                        </select>
+
+                        <!-- Consumable Filter -->
+                        <select id="filterConsumable" onchange="renderInventory()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">All Consumable Status</option>
+                            <option value="Yes">Consumables (Yes)</option>
+                            <option value="No">Non-Consumables (Blank/No)</option>
+                        </select>
+
+                        <!-- View Toggle -->
+                        <div class="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <button onclick="setViewMode('table')" id="viewBtnTable" class="px-3 py-1 rounded-lg text-xs font-semibold bg-white text-slate-800 shadow-sm transition-all">
+                                <i class="fa-solid fa-list mr-1"></i> Table
+                            </button>
+                            <button onclick="setViewMode('card')" id="viewBtnCard" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all">
+                                <i class="fa-solid fa-border-all mr-1"></i> Cards
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Item Bulk Action Bar -->
+                <div id="bulkActionBar" class="hidden bg-slate-900 text-white p-2.5 rounded-xl flex items-center justify-between text-xs animate-fade-in">
+                    <div class="flex items-center space-x-2 pl-2">
+                        <span class="font-bold text-amber-400" id="selectedCountText">0 selected</span>
+                        <span class="text-slate-400">|</span>
+                        <button onclick="selectAll(true)" class="text-slate-300 hover:text-white underline">Select All</button>
+                        <button onclick="selectAll(false)" class="text-slate-300 hover:text-white underline">Deselect All</button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="bulkMarkConsumable()" class="bg-amber-600 hover:bg-amber-500 px-2.5 py-1.5 rounded-lg font-semibold flex items-center">
+                            <i class="fa-solid fa-flag mr-1"></i> Flag Consumable
+                        </button>
+                        <button onclick="bulkDuplicate()" class="bg-blue-600 hover:bg-blue-500 px-2.5 py-1.5 rounded-lg font-semibold flex items-center">
+                            <i class="fa-solid fa-copy mr-1"></i> Duplicate
+                        </button>
+                        <button onclick="bulkExportCSV()" class="bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1.5 rounded-lg font-semibold flex items-center">
+                            <i class="fa-solid fa-file-csv mr-1"></i> Export Selected
+                        </button>
+                        <button onclick="bulkDelete()" class="bg-rose-600 hover:bg-rose-500 px-2.5 py-1.5 rounded-lg font-semibold flex items-center">
+                            <i class="fa-solid fa-trash mr-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW MODE A: TABLE VIEW -->
+            <div id="tableViewContainer" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto max-h-[650px]">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead class="bg-slate-900 text-white sticky top-0 z-10 font-semibold uppercase tracking-wider text-[11px]">
+                            <tr>
+                                <th class="p-3.5 w-10 text-center">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllRows(this.checked)" class="rounded border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+                                </th>
+                                <th class="p-3.5 min-w-[130px]">1. Primary Subject Area</th>
+                                <th class="p-3.5 min-w-[200px]">2. Ordering Name & Link</th>
+                                <th class="p-3.5 min-w-[180px]">3. Description</th>
+                                <th class="p-3.5 min-w-[110px] text-center">4. Quantity</th>
+                                <th class="p-3.5 min-w-[150px]">5. Rooms / Space</th>
+                                <th class="p-3.5 min-w-[130px]">6. Contact People</th>
+                                <th class="p-3.5 min-w-[160px]">7. Consumable? (Meredith Alert)</th>
+                                <th class="p-3.5 min-w-[150px]">8. Other Notes</th>
+                                <th class="p-3.5 w-24 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-slate-200 bg-white">
+                            <!-- Dynamic Rows Injected Here -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Table Footer -->
+                <div class="bg-slate-50 border-t border-slate-200 p-3 px-4 flex items-center justify-between text-xs text-slate-500">
+                    <div>
+                        Showing <span id="displayedCount" class="font-bold text-slate-800">0</span> of <span id="totalCount" class="font-bold text-slate-800">0</span> records
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span>Aligned with Google Sheet Schema</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW MODE B: GRID / CARD VIEW -->
+            <div id="cardViewContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Dynamic Cards Injected Here -->
+            </div>
+        </section>
+
+        <!-- TAB 3: ROOM EXPLORER VIEW -->
+        <section id="tab-rooms" class="tab-content hidden animate-fade-in space-y-6">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center">
+                            <i class="fa-solid fa-door-open text-blue-600 mr-2"></i> St. Charles Campus Room Explorer
+                        </h2>
+                        <p class="text-xs text-slate-500">Browse inventory segregated by room assignments, bookcases, workrooms, and closets.</p>
+                    </div>
+                    <div class="text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
+                        Total Designated Spaces: <span id="totalSpacesCount" class="font-bold text-blue-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Room Selection Cards Grid -->
+                <div id="roomsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Room Cards Injected Here -->
+                </div>
+            </div>
+
+            <!-- Room Detail Items Container -->
+            <div id="roomDetailContainer" class="hidden bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-location-arrow"></i>
+                        </div>
+                        <div>
+                            <h3 id="selectedRoomTitle" class="text-lg font-bold text-slate-900">Room Name</h3>
+                            <p class="text-xs text-slate-500">Filtered Campus Inventory Items</p>
+                        </div>
+                    </div>
+                    <button onclick="closeRoomDetail()" class="text-xs text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium transition-all">
+                        <i class="fa-solid fa-xmark mr-1"></i> Clear Room Filter
+                    </button>
+                </div>
+                <div id="roomItemsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Room specific items here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: REORDER & RESTOCK DESK (MEREDITH ALERT SYSTEM) -->
+        <section id="tab-reorder" class="tab-content hidden animate-fade-in space-y-6">
+            <!-- Header Banner -->
+            <div class="bg-gradient-to-r from-amber-600 via-amber-700 to-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="inline-flex items-center space-x-2 bg-amber-400/20 text-amber-200 px-3 py-1 rounded-full text-xs font-semibold mb-2 border border-amber-300/30">
+                        <i class="fa-solid fa-bell"></i> Meredith Restock & Purchase Request Queue
+                    </div>
+                    <h2 class="text-2xl font-black">Consumables & Low Stock Desk</h2>
+                    <p class="text-xs text-amber-100 mt-1 max-w-xl">
+                        Column 7 Standard: If an item is consumable ("Yes"), inform Meredith Hale so she can place replacement purchase orders.
+                    </p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="generatePrintablePO()" class="bg-white text-slate-900 hover:bg-amber-50 font-bold px-4 py-2.5 rounded-xl shadow-lg text-xs flex items-center transition-all">
+                        <i class="fa-solid fa-print mr-2 text-amber-600"></i> Generate Printable Purchase Order
+                    </button>
+                    <a href="mailto:meredithhale@brightmontacademy.com?subject=Brightmont%20St.%20Charles%20Inventory%20Restock%20Notice" 
+                       class="bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold px-4 py-2.5 rounded-xl shadow-lg text-xs flex items-center transition-all border border-amber-500/40">
+                        <i class="fa-solid fa-envelope mr-2"></i> Email Meredith Directly
+                    </a>
+                </div>
+            </div>
+
+            <!-- Items Requiring Action Grid -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900 text-base flex items-center">
+                        <i class="fa-solid fa-clipboard-check text-amber-600 mr-2"></i> Flagged Replacement Items (<span id="reorderQueueCount">0</span>)
+                    </h3>
+                    <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="text-xs text-emerald-600 hover:underline font-semibold flex items-center">
+                        <i class="fa-solid fa-table mr-1"></i> Verify on Google Sheet
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Primary Subject Area</th>
+                                <th class="p-3">Ordering Name / Item</th>
+                                <th class="p-3">Current Qty</th>
+                                <th class="p-3">Room / Space</th>
+                                <th class="p-3">Contact Person</th>
+                                <th class="p-3">Consumable Status / Note</th>
+                                <th class="p-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reorderTableBody" class="divide-y divide-slate-200">
+                            <!-- Injected Reorder items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: GOOGLE SYNC & APPS SCRIPT BRIDGE -->
+        <section id="tab-sync" class="tab-content hidden animate-fade-in space-y-6">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                <!-- Live Target Card -->
+                <div class="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-0.5 rounded-full text-xs font-semibold border border-emerald-500/30">
+                            <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Live Google Sheet Integration Target
+                        </div>
+                        <h3 class="text-xl font-bold">Brightmont Academy St. Charles - Live Inventory Sheet</h3>
+                        <p class="text-slate-400 text-xs font-mono break-all max-w-2xl">
+                            https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full lg:w-auto">
+                        <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow flex items-center justify-center transition-all">
+                            <i class="fa-solid fa-up-right-from-square mr-2"></i> Open Sheet in New Tab
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Integration Settings Configuration -->
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-4">
+                    <h4 class="font-bold text-slate-900 text-sm flex items-center">
+                        <i class="fa-solid fa-sliders text-blue-600 mr-2"></i> Sheet URL Configuration & Settings
+                    </h4>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Google Spreadsheet URL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="settingSheetUrl" 
+                                   value="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                                   class="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="saveSheetUrlSetting()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition-all">
+                                Update URL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Importer / Exporter Panel -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Duplicate Aware CSV / JSON Importer -->
+                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center">
+                            <i class="fa-solid fa-file-import text-indigo-600 mr-2"></i> Duplicate-Aware Importer
+                        </h4>
+                        <p class="text-xs text-slate-500">Import CSV or JSON files matching the 8 standard columns. Automatically updates matching items (Name + Room).</p>
+                        <div class="flex items-center space-x-2">
+                            <input type="file" id="importFileInput" accept=".csv,.json" class="hidden" onchange="handleFileImport(event)">
+                            <button onclick="document.getElementById('importFileInput').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition-all flex items-center">
+                                <i class="fa-solid fa-upload mr-2"></i> Select File (CSV / JSON)
+                            </button>
+                            <button onclick="loadDefaultCampusData()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl transition-all">
+                                Restore St. Charles Defaults
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Full Backup Exporter -->
+                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+                        <h4 class="font-bold text-slate-900 text-sm flex items-center">
+                            <i class="fa-solid fa-file-export text-emerald-600 mr-2"></i> Export Campus Inventory Backup
+                        </h4>
+                        <p class="text-xs text-slate-500">Download formatted dataset ready for Google Sheets paste or offline backup.</p>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="exportFullCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition-all flex items-center">
+                                <i class="fa-solid fa-file-csv mr-2"></i> Download CSV
+                            </button>
+                            <button onclick="exportFullJSON()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow transition-all flex items-center">
+                                <i class="fa-solid fa-code mr-2"></i> Download JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Apps Script Bridge Code Generator -->
+                <div class="bg-slate-900 text-slate-200 rounded-2xl p-5 border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-amber-400 text-sm flex items-center">
+                            <i class="fa-solid fa-code text-amber-400 mr-2"></i> 2-Way Google Apps Script Bridge Generator
+                        </h4>
+                        <button onclick="copyAppsScriptCode()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center">
+                            <i class="fa-solid fa-copy mr-1.5"></i> Copy Script Code
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Paste this code inside Google Sheets (<span class="text-slate-200 font-mono">Extensions &gt; Apps Script</span>) to enable 2-way live sync with spreadsheet <span class="text-amber-300 font-mono">1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0</span>.
+                    </p>
+                    <pre class="bg-slate-950 text-emerald-400 p-4 rounded-xl text-[11px] font-mono overflow-x-auto max-h-[220px] border border-slate-800 select-all" id="appsScriptBox">
+// Brightmont Academy St. Charles - 2-Way Sync Bridge Script
+const SPREADSHEET_ID = '1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0';
+const SHEET_GID = '1289365460';
+
+function doGet(e) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1).map(row => {
+    let item = {};
+    headers.forEach((h, i) => { item[h] = row[i]; });
+    return item;
+  });
+  return ContentService.createTextOutput(JSON.stringify(rows))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0];
+    sheet.clearContents();
+    
+    // 8 Standard Headers
+    const headers = [
+      "Primary Subject Area",
+      "Ordering Name and/or link, if it applies",
+      "Description",
+      "Quantity",
+      "Rooms/Space Storing Them",
+      "Contact people",
+      "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.",
+      "Other notes"
+    ];
+    sheet.appendRow(headers);
+    
+    payload.forEach(item => {
+      sheet.appendRow([
+        item["Primary Subject Area"] || "",
+        item["Ordering Name and/or link, if it applies"] || "",
+        item["Description"] || "",
+        item["Quantity"] || 0,
+        item["Rooms/Space Storing Them"] || "",
+        item["Contact people"] || "",
+        item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "",
+        item["Other notes"] || ""
+      ]);
+    });
+    return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-white">Brightmont Academy St. Charles Campus</span>
+                <span>&bull; 620 E Main Street, St. Charles, IL 60174</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460" 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   class="hover:text-amber-400 transition-colors">
+                    <i class="fa-solid fa-file-excel mr-1 text-emerald-400"></i> Open Live Sheet (GID: 1289365460)
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: ADD / EDIT ITEM MODAL -->
+    <div id="addItemModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 animate-fade-in my-8">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+                <h3 id="modalFormTitle" class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-blue-600 mr-2"></i> Add New Inventory Item
+                </h3>
+                <button onclick="closeModal('addItemModal')" class="text-slate-400 hover:text-slate-700 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="itemForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editItemId" value="">
+
+                <!-- 1. Primary Subject Area -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">1. Primary Subject Area *</label>
+                    <input type="text" id="formSubject" list="subjectDatalist" required placeholder="e.g. Science, Math, Reading, Art..." 
+                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <datalist id="subjectDatalist">
+                        <option value="Math">
+                        <option value="Science">
+                        <option value="Reading">
+                        <option value="English">
+                        <option value="Social Studies">
+                        <option value="Art">
+                        <option value="General Supplies">
+                    </datalist>
+                </div>
+
+                <!-- 2. Ordering Name and/or Link -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">2. Ordering Name and/or link, if it applies *</label>
+                    <input type="text" id="formOrderingName" required placeholder="e.g. 10-sided math dice, Digital Scale 0.01g..." 
+                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <!-- 3. Description -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">3. Description</label>
+                    <textarea id="formDescription" rows="2" placeholder="Specifications, grade level, kit details..." 
+                              class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 4. Quantity -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">4. Quantity *</label>
+                        <input type="number" id="formQuantity" min="0" required value="1" 
+                               class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <!-- 5. Rooms/Space Storing Them -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">5. Rooms/Space Storing Them *</label>
+                        <input type="text" id="formRoom" required placeholder="e.g. Room 1, Room 5, Homework Studio..." 
+                               class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 6. Contact People -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">6. Contact people</label>
+                        <input type="text" id="formContact" placeholder="e.g. Conboy, HWS, Dobie, Meredith..." 
+                               class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <!-- 7. Consumable Status -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            7. Consumable? ("Yes" alerts Meredith)
+                        </label>
+                        <select id="formConsumable" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">No / Leave Blank (Non-Consumable)</option>
+                            <option value="Yes">Yes (Inform Meredith for Replacement)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 8. Other Notes -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">8. Other notes</label>
+                    <input type="text" id="formNotes" placeholder="e.g. personal property, new order, stored on top shelf..." 
+                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex items-center justify-end space-x-3 border-t border-slate-200 pt-4">
+                    <button type="button" onclick="closeModal('addItemModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition-all">
+                        Save Inventory Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: PRINTABLE PURCHASE ORDER / MEREDITH RESTOCK MODAL -->
+    <div id="printablePoModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-8 border border-slate-200 animate-fade-in my-8">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-6 no-print">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-file-invoice-dollar text-amber-600 mr-2"></i> Campus Purchase Requisition Summary
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="bg-blue-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow hover:bg-blue-500">
+                        <i class="fa-solid fa-print mr-1.5"></i> Print Document
+                    </button>
+                    <button onclick="closeModal('printablePoModal')" class="text-slate-400 hover:text-slate-700 text-lg ml-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PRINTABLE CONTENT AREA -->
+            <div id="poPrintArea" class="space-y-6 text-slate-900">
+                <div class="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-blue-900 tracking-tight">BRIGHTMONT ACADEMY</h1>
+                        <p class="text-xs font-semibold text-slate-600 uppercase">St. Charles Campus Restock Requisition</p>
+                        <p class="text-xs text-slate-500">620 E Main Street, St. Charles, IL 60174 | (331) 306-0288</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-700">DATE: <span id="poDateText">--</span></div>
+                        <div class="text-xs font-semibold text-amber-700">ATTN: Meredith Hale (Campus Director)</div>
+                        <div class="text-[10px] text-slate-400 font-mono mt-1">Ref: Live Sheet GID #1289365460</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Requisitioned Consumables & Low Stock Items</h4>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 border-y border-slate-300 font-bold">
+                                <th class="p-2">Item Name / Ordering Link</th>
+                                <th class="p-2">Subject</th>
+                                <th class="p-2">Room</th>
+                                <th class="p-2">Current Qty</th>
+                                <th class="p-2">Contact Person</th>
+                                <th class="p-2">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poItemsTableBody" class="divide-y divide-slate-200">
+                            <!-- Injected PO Items -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="border-t border-slate-300 pt-4 flex justify-between items-end text-xs text-slate-600">
+                    <div>
+                        <p class="font-bold">Prepared By: St. Charles Campus Staff</p>
+                        <p class="text-[11px] text-slate-400">Target Google Sheet: https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="w-48 border-b border-slate-400 mb-1"></div>
+                        <p class="font-semibold text-[11px]">Meredith Hale Approval Signature</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // TARGET SPECIFIC GOOGLE SHEETS URL AS MANDATED
+        let TARGET_SHEET_URL = "https://docs.google.com/spreadsheets/d/1AVOthk_4lPCPi1zroepEjb19DozSYNyfwP2eifHjNr0/edit?gid=1289365460#gid=1289365460";
+
+        // APP STATE
+        let inventoryData = [];
+        let selectedItemIds = new Set();
+        let currentViewMode = 'table'; // 'table' or 'card'
+        let currentActiveTab = 'dashboard';
+        let subjectChartInstance = null;
+        let consumablesChartInstance = null;
+
+        // AUTHENTIC MOCK DATA BASED ON ST. CHARLES CAMPUS SHEET
+        const DEFAULT_CAMPUS_INVENTORY = [
+            {
+                id: "item-1",
+                "Primary Subject Area": "Math",
+                "Ordering Name and/or link, if it applies": "math dice",
+                "Description": "10 sided (14), math symbols (20), 6 sided (2)",
+                "Quantity": 36,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "HWS",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-2",
+                "Primary Subject Area": "Math",
+                "Ordering Name and/or link, if it applies": "plastic coins",
+                "Description": "Assorted pennies, nickels, dimes, quarters play set",
+                "Quantity": 12,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "HWS",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-3",
+                "Primary Subject Area": "Math",
+                "Ordering Name and/or link, if it applies": "protractors",
+                "Description": "Clear plastic 180-degree protractors",
+                "Quantity": 21,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "HWS",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-4",
+                "Primary Subject Area": "Math",
+                "Ordering Name and/or link, if it applies": "rulers, 12-inch, transparent",
+                "Description": "Standard 12-inch and metric clear rulers",
+                "Quantity": 18,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "HWS",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-5",
+                "Primary Subject Area": "Reading",
+                "Ordering Name and/or link, if it applies": "guided reading strips",
+                "Description": "Highlight tracking strips for dyslexic & early readers",
+                "Quantity": 8,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "HWS",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-6",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "50+ science experiments kit, using chemicals",
+                "Description": "Hands-on chemistry and physics lab equipment box",
+                "Quantity": 1,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "Dobie",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-7",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "bag of beans, genetics lab",
+                "Description": "Red & white kidney beans for Punnett square genetics",
+                "Quantity": 50,
+                "Rooms/Space Storing Them": "Room 5",
+                "Contact people": "Conboy",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "Yes",
+                "Other notes": "Inform Meredith for replacement bean seeds"
+            },
+            {
+                id: "item-8",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "bat skeleton",
+                "Description": "Real resin-embedded bat biological specimen",
+                "Quantity": 1,
+                "Rooms/Space Storing Them": "Room 5",
+                "Contact people": "Conboy",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": "personal property"
+            },
+            {
+                id: "item-9",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "charcoal pellets",
+                "Description": "Activated charcoal for environmental water filter labs",
+                "Quantity": 2,
+                "Rooms/Space Storing Them": "Room 5",
+                "Contact people": "Conboy",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "Yes",
+                "Other notes": "Running low - inform Meredith"
+            },
+            {
+                id: "item-10",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "digital scale, nearest 0.01 g",
+                "Description": "High-precision digital lab balance",
+                "Quantity": 2,
+                "Rooms/Space Storing Them": "Room 5",
+                "Contact people": "Conboy",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": "personal property"
+            },
+            {
+                id: "item-11",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "Earth Science Lab Kit",
+                "Description": "8th grade earth science experiment supplies",
+                "Quantity": 2,
+                "Rooms/Space Storing Them": "Room 5 / Room 8",
+                "Contact people": "Conboy / Oloris",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": "new kit"
+            },
+            {
+                id: "item-12",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "Ecosystems Life Science Kit",
+                "Description": "Terrarium and mini-ecosystem life cycle setup",
+                "Quantity": 1,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "Teacher Workroom",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": ""
+            },
+            {
+                id: "item-13",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "egg-carton-shaped planting pods",
+                "Description": "Biodegradable seedling starters for plant biology",
+                "Quantity": 30,
+                "Rooms/Space Storing Them": "Room 1",
+                "Contact people": "Staff",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "Yes",
+                "Other notes": "Inform Meredith when spring bio starts"
+            },
+            {
+                id: "item-14",
+                "Primary Subject Area": "Science",
+                "Ordering Name and/or link, if it applies": "hexane plastic model",
+                "Description": "3D organic chemistry molecular structural model",
+                "Quantity": 1,
+                "Rooms/Space Storing Them": "Room 5",
+                "Contact people": "Conboy",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "",
+                "Other notes": "personal property"
+            },
+            {
+                id: "item-15",
+                "Primary Subject Area": "Art",
+                "Ordering Name and/or link, if it applies": "Acrylic Paint Sets (24 colors)",
+                "Description": "Student grade acrylic art tubes",
+                "Quantity": 3,
+                "Rooms/Space Storing Them": "Art Island Closet",
+                "Contact people": "Paz / Violet",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "Yes",
+                "Other notes": "Inform Meredith to restock primary colors"
+            },
+            {
+                id: "item-16",
+                "Primary Subject Area": "General Supplies",
+                "Ordering Name and/or link, if it applies": "Dry Erase Markers (Assorted 12-pack)",
+                "Description": "Low-odor chisel tip whiteboard markers",
+                "Quantity": 2,
+                "Rooms/Space Storing Them": "Teacher Workroom",
+                "Contact people": "Burgess",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": "Yes",
+                "Other notes": "Low stock alert"
+            }
+        ];
+
+        // INITIALIZATION ON WINDOW LOAD
+        window.onload = function() {
+            loadInventoryFromStorage();
+            populateFilterOptions();
+            renderDashboard();
+            renderInventory();
+            renderRoomExplorer();
+            renderReorderDesk();
+        };
+
+        // STORAGE MANAGEMENT
+        function loadInventoryFromStorage() {
+            const saved = localStorage.getItem('brightmont_inventory_data');
+            if (saved) {
+                try {
+                    inventoryData = JSON.parse(saved);
+                } catch(e) {
+                    inventoryData = [...DEFAULT_CAMPUS_INVENTORY];
+                }
+            } else {
+                inventoryData = [...DEFAULT_CAMPUS_INVENTORY];
+                saveInventoryToStorage();
+            }
+
+            const savedUrl = localStorage.getItem('brightmont_sheet_url');
+            if (savedUrl) {
+                TARGET_SHEET_URL = savedUrl;
+                document.getElementById('settingSheetUrl').value = savedUrl;
+            }
+        }
+
+        function saveInventoryToStorage() {
+            localStorage.setItem('brightmont_inventory_data', JSON.stringify(inventoryData));
+            updateKPIs();
+        }
+
+        // TAB SWITCHING LOGIC
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            // Nav buttons styling
+            document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+
+            const activeDesktop = document.getElementById('nav-' + tabId);
+            const activeMobile = document.getElementById('mnav-' + tabId);
+            if(activeDesktop) {
+                activeDesktop.classList.add('bg-blue-600', 'text-white');
+                activeDesktop.classList.remove('text-slate-300');
+            }
+            if(activeMobile) {
+                activeMobile.classList.add('bg-blue-600', 'text-white');
+                activeMobile.classList.remove('text-slate-300');
+            }
+
+            // Trigger specific tab renders
+            if (tabId === 'dashboard') {
+                renderDashboard();
+            } else if (tabId === 'inventory') {
+                renderInventory();
+            } else if (tabId === 'rooms') {
+                renderRoomExplorer();
+            } else if (tabId === 'reorder') {
+                renderReorderDesk();
+            }
+        }
+
+        // POPULATE DROPDOWNS
+        function populateFilterOptions() {
+            const subjectSelect = document.getElementById('filterSubject');
+            const roomSelect = document.getElementById('filterRoom');
+            
+            const subjects = [...new Set(inventoryData.map(i => i["Primary Subject Area"]).filter(Boolean))].sort();
+            const rooms = [...new Set(inventoryData.map(i => i["Rooms/Space Storing Them"]).filter(Boolean))].sort();
+
+            subjectSelect.innerHTML = '<option value="">All Subjects</option>' + 
+                subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+            roomSelect.innerHTML = '<option value="">All Rooms / Spaces</option>' + 
+                rooms.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+        }
+
+        // RENDER KPI DASHBOARD & CHARTS
+        function renderDashboard() {
+            updateKPIs();
+
+            // Render Chart 1: Subject Counts
+            const subjectsMap = {};
+            inventoryData.forEach(item => {
+                const subj = item["Primary Subject Area"] || "Uncategorized";
+                subjectsMap[subj] = (subjectsMap[subj] || 0) + (parseInt(item["Quantity"]) || 1);
+            });
+
+            const ctx1 = document.getElementById('subjectChart').getContext('2d');
+            if (subjectChartInstance) subjectChartInstance.destroy();
+
+            subjectChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(subjectsMap),
+                    datasets: [{
+                        label: 'Total Units Available',
+                        data: Object.values(subjectsMap),
+                        backgroundColor: '#2563eb',
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#1d4ed8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Render Chart 2: Consumables
+            let consumableYes = 0;
+            let consumableNo = 0;
+            inventoryData.forEach(item => {
+                const c = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase();
+                if (c === 'yes') consumableYes++;
+                else consumableNo++;
+            });
+
+            const ctx2 = document.getElementById('consumablesChart').getContext('2d');
+            if (consumablesChartInstance) consumablesChartInstance.destroy();
+
+            consumablesChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Consumables (Inform Meredith)', 'Permanent Assets'],
+                    datasets: [{
+                        data: [consumableYes, consumableNo],
+                        backgroundColor: ['#f59e0b', '#059669'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function updateKPIs() {
+            const totalItems = inventoryData.length;
+            const totalUnits = inventoryData.reduce((acc, curr) => acc + (parseInt(curr["Quantity"]) || 0), 0);
+            
+            const consumablesCount = inventoryData.filter(i => {
+                const val = (i["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase();
+                return val === 'yes';
+            }).length;
+
+            const lowStockCount = inventoryData.filter(i => (parseInt(i["Quantity"]) || 0) <= 2).length;
+
+            document.getElementById('kpiTotalItems').innerText = totalItems;
+            document.getElementById('kpiTotalUnits').innerText = totalUnits;
+            document.getElementById('kpiConsumables').innerText = consumablesCount;
+            document.getElementById('kpiLowStock').innerText = lowStockCount;
+
+            const badge = document.getElementById('reorderBadge');
+            if (consumablesCount > 0) {
+                badge.classList.remove('hidden');
+                badge.innerText = consumablesCount;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // RENDER MASTER INVENTORY VIEW
+        function renderInventory() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            const subjectVal = document.getElementById('filterSubject').value;
+            const roomVal = document.getElementById('filterRoom').value;
+            const consumableVal = document.getElementById('filterConsumable').value;
+
+            const filtered = inventoryData.filter(item => {
+                const subj = item["Primary Subject Area"] || "";
+                const name = item["Ordering Name and/or link, if it applies"] || "";
+                const desc = item["Description"] || "";
+                const room = item["Rooms/Space Storing Them"] || "";
+                const contact = item["Contact people"] || "";
+                const notes = item["Other notes"] || "";
+                const cons = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim();
+
+                const matchesSearch = !searchVal || 
+                    subj.toLowerCase().includes(searchVal) ||
+                    name.toLowerCase().includes(searchVal) ||
+                    desc.toLowerCase().includes(searchVal) ||
+                    room.toLowerCase().includes(searchVal) ||
+                    contact.toLowerCase().includes(searchVal) ||
+                    notes.toLowerCase().includes(searchVal);
+
+                const matchesSubject = !subjectVal || subj === subjectVal;
+                const matchesRoom = !roomVal || room === roomVal;
+                
+                let matchesConsumable = true;
+                if (consumableVal === 'Yes') {
+                    matchesConsumable = cons.toLowerCase() === 'yes';
+                } else if (consumableVal === 'No') {
+                    matchesConsumable = cons.toLowerCase() !== 'yes';
+                }
+
+                return matchesSearch && matchesSubject && matchesRoom && matchesConsumable;
+            });
+
+            document.getElementById('displayedCount').innerText = filtered.length;
+            document.getElementById('totalCount').innerText = inventoryData.length;
+
+            if (currentViewMode === 'table') {
+                renderTableView(filtered);
+            } else {
+                renderCardView(filtered);
+            }
+
+            updateBulkActionBar();
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            if (mode === 'table') {
+                document.getElementById('tableViewContainer').classList.remove('hidden');
+                document.getElementById('cardViewContainer').classList.add('hidden');
+                document.getElementById('viewBtnTable').className = "px-3 py-1 rounded-lg text-xs font-semibold bg-white text-slate-800 shadow-sm transition-all";
+                document.getElementById('viewBtnCard').className = "px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all";
+            } else {
+                document.getElementById('tableViewContainer').classList.add('hidden');
+                document.getElementById('cardViewContainer').classList.remove('hidden');
+                document.getElementById('viewBtnTable').className = "px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all";
+                document.getElementById('viewBtnCard').className = "px-3 py-1 rounded-lg text-xs font-semibold bg-white text-slate-800 shadow-sm transition-all";
+            }
+            renderInventory();
+        }
+
+        // TABLE VIEW GENERATION
+        function renderTableView(items) {
+            const tbody = document.getElementById('inventoryTableBody');
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">No inventory records matching current filter criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const isSelected = selectedItemIds.has(item.id);
+                const isConsumable = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase() === 'yes';
+
+                return `
+                <tr class="hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-blue-50/60' : ''}">
+                    <td class="p-3.5 text-center">
+                        <input type="checkbox" onchange="toggleSelectItem('${item.id}', this.checked)" ${isSelected ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer">
+                    </td>
+                    <td class="p-3.5 font-medium text-slate-900">
+                        <span class="inline-block bg-slate-100 text-slate-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-slate-200">
+                            ${escapeHtml(item["Primary Subject Area"] || "N/A")}
+                        </span>
+                    </td>
+                    <td class="p-3.5 font-bold text-slate-900">
+                        ${escapeHtml(item["Ordering Name and/or link, if it applies"] || "")}
+                    </td>
+                    <td class="p-3.5 text-slate-600 text-xs max-w-xs truncate" title="${escapeHtml(item["Description"] || "")}">
+                        ${escapeHtml(item["Description"] || "-")}
+                    </td>
+                    <td class="p-3.5 text-center">
+                        <div class="inline-flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                            <button onclick="adjustQuantity('${item.id}', -1)" class="w-5 h-5 bg-white hover:bg-slate-200 text-slate-700 font-bold rounded flex items-center justify-center text-xs shadow-sm transition-all">-</button>
+                            <span class="font-bold text-xs px-1 text-slate-900 min-w-[20px]">${item["Quantity"]}</span>
+                            <button onclick="adjustQuantity('${item.id}', 1)" class="w-5 h-5 bg-white hover:bg-slate-200 text-slate-700 font-bold rounded flex items-center justify-center text-xs shadow-sm transition-all">+</button>
+                        </div>
+                    </td>
+                    <td class="p-3.5 text-slate-700 font-medium">
+                        <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> ${escapeHtml(item["Rooms/Space Storing Them"] || "Unassigned")}
+                    </td>
+                    <td class="p-3.5 text-slate-600 text-xs">
+                        ${escapeHtml(item["Contact people"] || "-")}
+                    </td>
+                    <td class="p-3.5">
+                        ${isConsumable ? `
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i> Inform Meredith
+                            </span>
+                        ` : `<span class="text-slate-400 text-xs">Standard</span>`}
+                    </td>
+                    <td class="p-3.5 text-slate-500 text-xs italic">
+                        ${escapeHtml(item["Other notes"] || "-")}
+                    </td>
+                    <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+                        <button onclick="openEditModal('${item.id}')" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors" title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteSingleItem('${item.id}')" class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition-colors" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // CARD VIEW GENERATION
+        function renderCardView(items) {
+            const container = document.getElementById('cardViewContainer');
+            if (items.length === 0) {
+                container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">No inventory records found.</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(item => {
+                const isConsumable = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase() === 'yes';
+
+                return `
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3 relative">
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200">
+                                ${escapeHtml(item["Primary Subject Area"] || "General")}
+                            </span>
+                            ${isConsumable ? `
+                                <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">
+                                    Consumable
+                                </span>
+                            ` : ''}
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm leading-snug">
+                            ${escapeHtml(item["Ordering Name and/or link, if it applies"] || "")}
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-1 line-clamp-2">
+                            ${escapeHtml(item["Description"] || "No additional description.")}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400"><i class="fa-solid fa-door-closed mr-1"></i> Space:</span>
+                            <span class="font-medium text-slate-800">${escapeHtml(item["Rooms/Space Storing Them"] || "Unassigned")}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400"><i class="fa-solid fa-user mr-1"></i> Contact:</span>
+                            <span class="font-medium text-slate-800">${escapeHtml(item["Contact people"] || "Staff")}</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-slate-400">Stock Qty:</span>
+                            <div class="inline-flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                <button onclick="adjustQuantity('${item.id}', -1)" class="w-5 h-5 bg-white text-slate-700 font-bold rounded flex items-center justify-center text-xs shadow-sm">-</button>
+                                <span class="font-bold text-xs px-1 text-slate-900">${item["Quantity"]}</span>
+                                <button onclick="adjustQuantity('${item.id}', 1)" class="w-5 h-5 bg-white text-slate-700 font-bold rounded flex items-center justify-center text-xs shadow-sm">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                        <button onclick="openEditModal('${item.id}')" class="text-xs font-semibold text-blue-600 hover:underline">Edit</button>
+                        <button onclick="deleteSingleItem('${item.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Delete</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // ROOM EXPLORER VIEW GENERATION
+        function renderRoomExplorer() {
+            const roomsGrid = document.getElementById('roomsGrid');
+            const roomMap = {};
+
+            inventoryData.forEach(item => {
+                const room = (item["Rooms/Space Storing Them"] || "Unassigned Space").trim();
+                if (!roomMap[room]) roomMap[room] = [];
+                roomMap[room].push(item);
+            });
+
+            const keys = Object.keys(roomMap).sort();
+            document.getElementById('totalSpacesCount').innerText = keys.length;
+
+            roomsGrid.innerHTML = keys.map(roomName => {
+                const itemsCount = roomMap[roomName].length;
+                const totalUnits = roomMap[roomName].reduce((sum, i) => sum + (parseInt(i["Quantity"]) || 0), 0);
+
+                return `
+                <div onclick="showRoomDetails('${escapeHtml(roomName)}')" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center text-lg font-bold transition-all">
+                            <i class="fa-solid fa-door-open"></i>
+                        </div>
+                        <span class="text-xs font-extrabold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full group-hover:bg-blue-100 group-hover:text-blue-800 transition-colors">
+                            ${itemsCount} Item Types
+                        </span>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                        ${escapeHtml(roomName)}
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-1">Total On-Hand Count: <span class="font-bold text-slate-800">${totalUnits} units</span></p>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function showRoomDetails(roomName) {
+            const container = document.getElementById('roomDetailContainer');
+            const list = document.getElementById('roomItemsList');
+            document.getElementById('selectedRoomTitle').innerText = roomName;
+
+            const roomItems = inventoryData.filter(i => (i["Rooms/Space Storing Them"] || "Unassigned Space").trim() === roomName);
+
+            list.innerHTML = roomItems.map(item => `
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <h5 class="font-bold text-xs text-slate-900">${escapeHtml(item["Ordering Name and/or link, if it applies"] || "")}</h5>
+                        <p class="text-[11px] text-slate-500">${escapeHtml(item["Primary Subject Area"] || "")} &bull; Contact: ${escapeHtml(item["Contact people"] || "N/A")}</p>
+                    </div>
+                    <div class="font-bold text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                        Qty: ${item["Quantity"]}
+                    </div>
+                </div>
+            `).join('');
+
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeRoomDetail() {
+            document.getElementById('roomDetailContainer').classList.add('hidden');
+        }
+
+        // REORDER & RESTOCK DESK (MEREDITH ALERT SYSTEM)
+        function renderReorderDesk() {
+            const tbody = document.getElementById('reorderTableBody');
+            const alertItems = inventoryData.filter(item => {
+                const isConsumable = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase() === 'yes';
+                const isLow = (parseInt(item["Quantity"]) || 0) <= 2;
+                return isConsumable || isLow;
+            });
+
+            document.getElementById('reorderQueueCount').innerText = alertItems.length;
+
+            if (alertItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No items currently flagged for reorder or replacement.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = alertItems.map(item => `
+                <tr class="hover:bg-amber-50/50 transition-colors">
+                    <td class="p-3 font-semibold text-slate-800">${escapeHtml(item["Primary Subject Area"] || "N/A")}</td>
+                    <td class="p-3 font-bold text-slate-900">${escapeHtml(item["Ordering Name and/or link, if it applies"] || "")}</td>
+                    <td class="p-3 font-bold ${parseInt(item["Quantity"]) <= 2 ? 'text-rose-600' : 'text-slate-800'}">${item["Quantity"]}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(item["Rooms/Space Storing Them"] || "")}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(item["Contact people"] || "")}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                            Inform Meredith
+                        </span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <a href="mailto:meredithhale@brightmontacademy.com?subject=Reorder%20Request:%20${encodeURIComponent(item["Ordering Name and/or link, if it applies"] || "")}&body=Hi%20Meredith,%0A%0APlease%20order%20replacement%20for:%20${encodeURIComponent(item["Ordering Name and/or link, if it applies"] || "")}%0ALocation:%20${encodeURIComponent(item["Rooms/Space Storing Them"] || "")}%0ACurrent%20Qty:%20${item["Quantity"]}" 
+                           class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2.5 py-1 rounded text-[11px] inline-flex items-center">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> Alert Meredith
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // QUANTITY ADJUSTER
+        function adjustQuantity(id, delta) {
+            const item = inventoryData.find(i => i.id === id);
+            if (item) {
+                let current = parseInt(item["Quantity"]) || 0;
+                current = Math.max(0, current + delta);
+                item["Quantity"] = current;
+                saveInventoryToStorage();
+                renderInventory();
+                showToast(`Updated quantity for ${item["Ordering Name and/or link, if it applies"]}`);
+            }
+        }
+
+        // ITEM FORM MODAL HANDLERS
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            if (modalId === 'addItemModal') {
+                document.getElementById('itemForm').reset();
+                document.getElementById('editItemId').value = '';
+                document.getElementById('modalFormTitle').innerHTML = `<i class="fa-solid fa-plus text-blue-600 mr-2"></i> Add New Inventory Item`;
+            }
+        }
+
+        function openEditModal(id) {
+            const item = inventoryData.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('formSubject').value = item["Primary Subject Area"] || '';
+            document.getElementById('formOrderingName').value = item["Ordering Name and/or link, if it applies"] || '';
+            document.getElementById('formDescription').value = item["Description"] || '';
+            document.getElementById('formQuantity').value = item["Quantity"] || 1;
+            document.getElementById('formRoom').value = item["Rooms/Space Storing Them"] || '';
+            document.getElementById('formContact').value = item["Contact people"] || '';
+            document.getElementById('formConsumable').value = item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || '';
+            document.getElementById('formNotes').value = item["Other notes"] || '';
+
+            document.getElementById('modalFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-600 mr-2"></i> Edit Inventory Record`;
+            openModal('addItemModal');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editItemId').value;
+            
+            const newItemObj = {
+                id: editId || ("item-" + Date.now()),
+                "Primary Subject Area": document.getElementById('formSubject').value.trim(),
+                "Ordering Name and/or link, if it applies": document.getElementById('formOrderingName').value.trim(),
+                "Description": document.getElementById('formDescription').value.trim(),
+                "Quantity": parseInt(document.getElementById('formQuantity').value) || 0,
+                "Rooms/Space Storing Them": document.getElementById('formRoom').value.trim(),
+                "Contact people": document.getElementById('formContact').value.trim(),
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.": document.getElementById('formConsumable').value,
+                "Other notes": document.getElementById('formNotes').value.trim()
+            };
+
+            if (editId) {
+                const idx = inventoryData.findIndex(i => i.id === editId);
+                if (idx !== -1) inventoryData[idx] = newItemObj;
+                showToast("Item updated successfully");
+            } else {
+                inventoryData.unshift(newItemObj);
+                showToast("New item added to inventory");
+            }
+
+            saveInventoryToStorage();
+            populateFilterOptions();
+            renderInventory();
+            closeModal('addItemModal');
+        }
+
+        function deleteSingleItem(id) {
+            if (confirm("Are you sure you want to remove this item from the campus inventory?")) {
+                inventoryData = inventoryData.filter(i => i.id !== id);
+                selectedItemIds.delete(id);
+                saveInventoryToStorage();
+                populateFilterOptions();
+                renderInventory();
+                showToast("Item deleted");
+            }
+        }
+
+        // BULK SELECTION ACTIONS
+        function toggleSelectItem(id, checked) {
+            if (checked) selectedItemIds.add(id);
+            else selectedItemIds.delete(id);
+            updateBulkActionBar();
+        }
+
+        function toggleSelectAllRows(checked) {
+            selectAll(checked);
+        }
+
+        function selectAll(checked) {
+            if (checked) {
+                inventoryData.forEach(i => selectedItemIds.add(i.id));
+            } else {
+                selectedItemIds.clear();
+            }
+            const headerCheckbox = document.getElementById('selectAllCheckbox');
+            if (headerCheckbox) headerCheckbox.checked = checked;
+            renderInventory();
+        }
+
+        function updateBulkActionBar() {
+            const bar = document.getElementById('bulkActionBar');
+            const countText = document.getElementById('selectedCountText');
+            if (selectedItemIds.size > 0) {
+                bar.classList.remove('hidden');
+                countText.innerText = `${selectedItemIds.size} selected`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        function bulkDelete() {
+            if (confirm(`Delete ${selectedItemIds.size} selected items?`)) {
+                inventoryData = inventoryData.filter(i => !selectedItemIds.has(i.id));
+                selectedItemIds.clear();
+                saveInventoryToStorage();
+                populateFilterOptions();
+                renderInventory();
+                showToast("Selected items deleted");
+            }
+        }
+
+        function bulkMarkConsumable() {
+            inventoryData.forEach(i => {
+                if (selectedItemIds.has(i.id)) {
+                    i["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] = "Yes";
+                }
+            });
+            saveInventoryToStorage();
+            renderInventory();
+            showToast("Marked items as consumable (Meredith Alert)");
+        }
+
+        function bulkDuplicate() {
+            const newItems = [];
+            inventoryData.forEach(i => {
+                if (selectedItemIds.has(i.id)) {
+                    const dup = JSON.parse(JSON.stringify(i));
+                    dup.id = "item-" + Date.now() + Math.random().toString(36).substring(2,5);
+                    dup["Ordering Name and/or link, if it applies"] += " (Copy)";
+                    newItems.push(dup);
+                }
+            });
+            inventoryData.unshift(...newItems);
+            saveInventoryToStorage();
+            renderInventory();
+            showToast(`Duplicated ${newItems.length} item(s)`);
+        }
+
+        // PRINTABLE PURCHASE ORDER GENERATION
+        function generatePrintablePO() {
+            const alertItems = inventoryData.filter(item => {
+                const isConsumable = (item["Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it."] || "").trim().toLowerCase() === 'yes';
+                const isLow = (parseInt(item["Quantity"]) || 0) <= 2;
+                return isConsumable || isLow;
+            });
+
+            document.getElementById('poDateText').innerText = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            
+            const tbody = document.getElementById('poItemsTableBody');
+            tbody.innerHTML = alertItems.map(item => `
+                <tr>
+                    <td class="p-2 font-bold">${escapeHtml(item["Ordering Name and/or link, if it applies"] || "")}</td>
+                    <td class="p-2">${escapeHtml(item["Primary Subject Area"] || "")}</td>
+                    <td class="p-2">${escapeHtml(item["Rooms/Space Storing Them"] || "")}</td>
+                    <td class="p-2 font-bold text-center">${item["Quantity"]}</td>
+                    <td class="p-2">${escapeHtml(item["Contact people"] || "")}</td>
+                    <td class="p-2 text-slate-500">${escapeHtml(item["Other notes"] || "Meredith Restock")}</td>
+                </tr>
+            `).join('');
+
+            openModal('printablePoModal');
+        }
+
+        // EXPORT & IMPORTER FUNCTIONS
+        function exportFullCSV() {
+            const headers = [
+                "Primary Subject Area",
+                "Ordering Name and/or link, if it applies",
+                "Description",
+                "Quantity",
+                "Rooms/Space Storing Them",
+                "Contact people",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.",
+                "Other notes"
+            ];
+
+            let csvStr = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+
+            inventoryData.forEach(i => {
+                const row = headers.map(h => `"${(i[h] || '').toString().replace(/"/g, '""')}"`);
+                csvStr += row.join(',') + '\n';
+            });
+
+            downloadFile(csvStr, 'Brightmont_St_Charles_Inventory_Backup.csv', 'text/csv');
+        }
+
+        function bulkExportCSV() {
+            const selected = inventoryData.filter(i => selectedItemIds.has(i.id));
+            if (selected.length === 0) return;
+
+            const headers = [
+                "Primary Subject Area",
+                "Ordering Name and/or link, if it applies",
+                "Description",
+                "Quantity",
+                "Rooms/Space Storing Them",
+                "Contact people",
+                "Consumable? Answer \"Yes\" or, if no, leave blank. If \"Yes,\" inform Meredith so that she can replace it.",
+                "Other notes"
+            ];
+
+            let csvStr = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+            selected.forEach(i => {
+                const row = headers.map(h => `"${(i[h] || '').toString().replace(/"/g, '""')}"`);
+                csvStr += row.join(',') + '\n';
+            });
+
+            downloadFile(csvStr, 'Selected_Inventory_Export.csv', 'text/csv');
+        }
+
+        function exportFullJSON() {
+            const jsonStr = JSON.stringify(inventoryData, null, 2);
+            downloadFile(jsonStr, 'Brightmont_St_Charles_Inventory.json', 'application/json');
+        }
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function handleFileImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const text = evt.target.result;
+                    if (file.name.endsWith('.json')) {
+                        const parsed = JSON.parse(text);
+                        mergeImportedData(parsed);
+                    } else {
+                        const parsedCSV = parseCSV(text);
+                        mergeImportedData(parsedCSV);
+                    }
+                } catch(err) {
+                    showToast("Failed to parse imported file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function mergeImportedData(importedItems) {
+            let updatedCount = 0;
+            let addedCount = 0;
+
+            importedItems.forEach(newItem => {
+                const name = newItem["Ordering Name and/or link, if it applies"];
+                const room = newItem["Rooms/Space Storing Them"];
+                if (!name) return;
+
+                // Match duplicate by Name + Room
+                const existing = inventoryData.find(i => 
+                    (i["Ordering Name and/or link, if it applies"] || '').toLowerCase() === name.toLowerCase() &&
+                    (i["Rooms/Space Storing Them"] || '').toLowerCase() === (room || '').toLowerCase()
+                );
+
+                if (existing) {
+                    Object.assign(existing, newItem);
+                    updatedCount++;
+                } else {
+                    newItem.id = "item-" + Date.now() + Math.random().toString(36).substring(2,5);
+                    inventoryData.push(newItem);
+                    addedCount++;
+                }
+            });
+
+            saveInventoryToStorage();
+            populateFilterOptions();
+            renderInventory();
+            showToast(`Import completed: ${addedCount} added, ${updatedCount} updated.`);
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(l => l.trim().length > 0);
+            if (lines.length < 2) return [];
+
+            const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+            const items = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                // Simple CSV row parser
+                const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    let val = row[idx] ? row[idx].replace(/^"|"$/g, '').trim() : '';
+                    obj[h] = val;
+                });
+                items.push(obj);
+            }
+            return items;
+        }
+
+        function loadDefaultCampusData() {
+            if (confirm("Reset local storage to original St. Charles campus defaults?")) {
+                inventoryData = [...DEFAULT_CAMPUS_INVENTORY];
+                saveInventoryToStorage();
+                populateFilterOptions();
+                renderInventory();
+                showToast("Default inventory data restored.");
+            }
+        }
+
+        // SETTINGS HANDLER
+        function saveSheetUrlSetting() {
+            const val = document.getElementById('settingSheetUrl').value.trim();
+            if (val) {
+                TARGET_SHEET_URL = val;
+                localStorage.setItem('brightmont_sheet_url', val);
+                showToast("Target Google Sheet URL saved.");
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const code = document.getElementById('appsScriptBox').innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast("Google Apps Script copied to clipboard!");
+        }
+
+        // TOAST NOTIFICATIONS (NO ALERT())
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs border border-slate-700 animate-fade-in';
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+                <span class="font-medium">${escapeHtml(message)}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // UTILITY: ESCAPE HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
